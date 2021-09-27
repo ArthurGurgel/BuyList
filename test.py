@@ -2,11 +2,18 @@ import tkinter as tk
 from tkinter import *
 from tkinter import messagebox
 from tkinter.ttk import *
+from pymongo import MongoClient
+import pprint   
 
-inventory = [ ]
-buy_list = [ ]
-stock = [ ]
-
+#Create screen informations
+root = Tk()
+root.title('BUY LIST')
+root.geometry('400x400')
+#Connect to DB
+client = MongoClient('localhost', 27017)
+#Create a DB
+db = client.test
+#Create a principal screen
 class PrincipalGUI:
 	def __init__(self, master=None):
 
@@ -15,7 +22,7 @@ class PrincipalGUI:
 		
 		self.label = Label(self.frame1, text = 'Welcome to buy list',)
 		self.label.pack(side='left')
-		
+		#Create btns and set commands
 		self.button_add = Button(self.frame2, text = 'Add item', command = AddGUI)
 		self.button_inventory = Button(self.frame2, text = 'Inventory', command = InventoryGUI)
 		self.button_list = Button(self.frame2, text = 'Buy list', command = BuyListGUI)
@@ -32,12 +39,26 @@ class PrincipalGUI:
 		self.frame2.pack()
 		
 class AddGUI:
-
+    #Funcction of btn
     def add(self):
-        inventory.append([self.entry.get(), self.inventory.get(), self.minimum.get(), self.combo.get()])
-        stock.append([self.entry.get(), self.inventory.get(), self.combo.get()])
-        messagebox.showinfo('Inventory',self.entry.get() + ' has been add on inventory')
-        
+        #Connect a Data Base
+        client = MongoClient('localhost', 27017)
+
+        #Insert into a Table
+        db.itens.insert_one(
+               {
+                    'item': self.item.get(),
+                    'amount': self.amount.get(),
+                    'minimum': self.minimum.get(),
+                    'unity': self.combo.get()                                 
+               }
+        )
+
+        #Clear the text
+        self.item.delete(0, END)
+        self.amount.delete(0, END)
+        self.minimum.delete(0, END)
+                
     def __init__(self, master=None):
         
         self.frame1 = Frame(master)
@@ -46,16 +67,16 @@ class AddGUI:
         self.frame4 = Frame(master)
         
         self.label = Label(self.frame1, text = 'Insert item:  ')
-        self.entry = Entry(self.frame1, width = 30)
+        self.item = Entry(self.frame1, width = 30)
 
         self.label.pack(side = 'left')
-        self.entry.pack(side = 'left')
+        self.item.pack(side = 'left')
         
         self.label1 = Label(self.frame2, text = 'Insert the amount:  ')
-        self.inventory = Entry(self.frame2, width = 25)
+        self.amount = Entry(self.frame2, width = 25)
 
         self.label1.pack(side = 'left')
-        self.inventory.pack(side = 'left')
+        self.amount.pack(side = 'left')
 
         self.label2 = Label(self.frame3, text = 'Insert the minimum amount: ')
         self.minimum = Entry(self.frame3, width = 18)
@@ -65,7 +86,7 @@ class AddGUI:
         
                         
         self.combo = Combobox (self.frame4)
-        if self.inventory.get() == '1':
+        if self.amount.get() == '1':
         	self.combo['values']= ('KG', 'Liter', 'UN', 'Pct' )
         else:
         	self.combo['values']= ('KG', 'Liters', 'UNs', 'Pcts' )
@@ -85,39 +106,37 @@ class AddGUI:
         self.frame2.pack()
         self.frame3.pack()
         self.frame4.pack()
-                		
+            		
 class InventoryGUI:
 	def __init__(self, master=None):
-		self.frame1= Frame(master)
-		self.frame2= Frame(master)
-		
-		self.stock = Listbox (self.frame1)
-		for item in stock:
-			self.stock.insert(END, item)
-			
-		self.button_exit = Button(self.frame2, text = 'Exit',  command = root.destroy)
-		
-		self.button_exit.pack()
-		self.stock.pack()		
-		self.frame1.pack()
-		self.frame2.pack()
+            self.frame1= Frame(master)
+            self.frame2= Frame(master)
+
+            client = MongoClient('localhost', 27017)  # Conectando ao banco
+            db = client.teste  # selecionando o banco de dados
+            collection = db.itens.find()
+
+            self.stock = Listbox (self.frame1)
+            for document in collection:
+                self.stock.insert(END, document)
+            
+            self.button_exit = Button(self.frame2, text = 'Exit',  command = root.destroy)
+
+                       
+            self.stock.pack()
+            self.button_exit.pack()
+            self.frame1.pack()
+            self.frame2.pack()
 		
 class BuyListGUI:
 	def __init__(self, master=None):
 		self.frame1= Frame(master)
 		self.frame2= Frame(master)
+        
 		
-		self.buy_list = Listbox (self.frame1)
-		for item in buy_list:
-			self.buy_list.insert(END, item)
-			
-		self.button_exit = Button(self.frame2, text = 'Exit',  command = root.destroy)
-		
-		self.button_exit.pack()
-		self.buy_list.pack()		
 		self.frame1.pack()
 		self.frame2.pack()
 		
-root = Tk()
+
 PrincipalGUI(root)
 root.mainloop()
